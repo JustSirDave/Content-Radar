@@ -165,7 +165,7 @@ The pipeline itself has no model. Clustering, scoring and the floor are rule-bas
 1. **X through Google News RSS.** Now enabled and returning fresh posts (section 4). Remaining risk: it is a sample, titles are truncated, post authors are not shown, and Google may change or throttle the feed.
 2. **Reddit.** Blocked from the owner's machine. Open whether any legitimate route exists later.
 3. **Notion destination.** Not chosen. Decide when the first real digest is pushed (a page per day, or a database with one row per topic, are the two candidates).
-4. **Tuning.** All starting values in section 11 are placeholders until real digests exist.
+4. **Tuning.** All starting values in section 11 are placeholders until real digests exist. The score weights were not changed on 2026-11-04: a first round of 12 title-based picks (10 post, 2 no) gave too little signal, and the owner said the picks were quick reactions to titles. A `ratings` table plus `rate` and `weights` commands now collect post, maybe and no marks with the score parts at rating time, so the weights can be tuned on evidence after several digests.
 
 **Phase 1 built (branch `feat/phase-1-pipeline`), first live run 2026-11-04: 17 of 23 sources ok.**
 Findings from that run, to act on when tuning:

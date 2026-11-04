@@ -72,3 +72,9 @@ Date: 2026-11-04 | Status: approved
 Context: Release notes (for example "Anthropic Python SDK release v2.5.0") and official-account posts took main-list slots, but they are updates to know about, not stories to write about.
 Decision: A topic enters the main list only if a community or news source other than the X sample carries it. Topics carried only by vendors, regulators or X posts appear only in the vendor and regulator section.
 Alternatives: Keep one mixed list (crowds out stories); exclude release feeds entirely (loses useful updates).
+
+## D-013 — Score weights unchanged; collect marks to tune them on evidence
+Date: 2026-11-04 | Status: approved
+Context: The owner marked 12 main-list items from titles alone: 10 "post", 2 "no" (CBN data localisation advice, the naira budget story). They said the picks were quick reactions to titles and that they skipped two for having no angle of their own. That is too few misses, and too much about the owner, to fit five weights.
+Decision: Leave the weights as they are. Add a `ratings` table (approved by the owner, SQL shown before it was added), a `rate` command that copies the topic's score parts from the latest digest, and a `weights` command that compares score parts for "post" against "no" once there are at least 5 of each.
+Alternatives: Retune now on 12 title-based marks (would encode a guess); tune by hand without data.

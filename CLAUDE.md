@@ -12,6 +12,8 @@ A local Python pipeline that collects public posts and articles from free source
   - Read further back than catch-up would: `python -m radar run --since-hours 72`
   - Mark a topic after posting: `python -m radar mark <topic_id> covered` (or `dismissed`, `open`)
   - List remembered topics: `python -m radar topics [--status open]`
+  - Rate a topic shown in the latest digest: `python -m radar rate <topic_id> post|maybe|no`
+  - Compare score parts for items you post against items you skip: `python -m radar weights` (needs at least 5 "post" and 5 "no" marks)
   - Tests: `python -m unittest discover -s tests -t .`
   - Lint: none configured yet.
 - Layout: `radar/config.py` holds every tunable value and source list; `radar/sources/` the collectors; `radar/rank.py` clustering, scoring and the floor; `radar/store.py` SQLite; `radar/digest.py` the output.

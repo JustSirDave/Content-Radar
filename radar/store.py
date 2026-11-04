@@ -24,6 +24,13 @@ CREATE TABLE IF NOT EXISTS topics (
     last_seen TEXT NOT NULL, times_surfaced INTEGER NOT NULL DEFAULT 0,
     last_surfaced_day TEXT, status TEXT NOT NULL DEFAULT 'open', status_at TEXT
 );
+CREATE TABLE IF NOT EXISTS ratings (
+    topic_id   INTEGER PRIMARY KEY REFERENCES topics(id),
+    rating     TEXT NOT NULL CHECK (rating IN ('post', 'maybe', 'no')),
+    rated_at   TEXT NOT NULL,
+    components TEXT NOT NULL,
+    score      REAL NOT NULL
+);
 CREATE TABLE IF NOT EXISTS runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT, started TEXT NOT NULL, finished TEXT,
     health TEXT NOT NULL
@@ -31,6 +38,7 @@ CREATE TABLE IF NOT EXISTS runs (
 """
 
 VALID_STATUSES = ("open", "covered", "dismissed")
+RATINGS = ("post", "maybe", "no")
 
 
 def iso(dt: datetime) -> str:
@@ -170,6 +178,28 @@ class Store:
             return self.db.execute("SELECT * FROM topics ORDER BY last_seen DESC").fetchall()
         return self.db.execute("SELECT * FROM topics WHERE status = ? ORDER BY last_seen DESC",
                                (status,)).fetchall()
+
+    # --- ratings (post / maybe / no) for weight tuning --------------------------------
+
+    def set_rating(self, topic_id: int, rating: str, now: datetime, components: dict,
+                   score: float) -> None:
+        if rating not in RATINGS:
+            raise ValueError(f"rating must be one of {RATINGS}, got {rating!r}")
+        self.get_topic(topic_id)
+        with self.db:
+            self.db.execute(
+                "INSERT INTO ratings(topic_id, rating, rated_at, components, score) VALUES (?,?,?,?,?) "
+                "ON CONFLICT(topic_id) DO UPDATE SET rating = excluded.rating, "
+                "rated_at = excluded.rated_at, components = excluded.components, score = excluded.score",
+                (topic_id, rating, iso(now), json.dumps(components), score),
+            )
+
+    def list_ratings(self) -> list[dict]:
+        return [
+            {"topic_id": r["topic_id"], "rating": r["rating"], "score": r["score"],
+             "components": json.loads(r["components"])}
+            for r in self.db.execute("SELECT * FROM ratings ORDER BY topic_id")
+        ]
 
     # --- runs ------------------------------------------------------------------------
 
