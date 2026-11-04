@@ -6,7 +6,16 @@ A local Python pipeline that collects public posts and articles from free source
 
 - Python, SQLite, Windows Task Scheduler. No model API is called by the pipeline.
 - Package manager: pip with venv.
-- Run, test and lint commands: not defined yet, because no code exists. The backend seat fills these in when the project is scaffolded. Do not invent them.
+- Standard library only (Python 3.10+). `requirements.txt` has no packages.
+- Commands, run from the project folder:
+  - Run: `python -m radar run` (writes `digests/YYYY-MM-DD.md` and `.json`, database at `data/radar.db`)
+  - Read further back than catch-up would: `python -m radar run --since-hours 72`
+  - Mark a topic after posting: `python -m radar mark <topic_id> covered` (or `dismissed`, `open`)
+  - List remembered topics: `python -m radar topics [--status open]`
+  - Tests: `python -m unittest discover -s tests -t .`
+  - Lint: none configured yet.
+- Schedule: `scripts/register_task.ps1` registers the Windows task (every 4 hours, runs after a missed start). It changes Windows settings, so the owner runs it.
+- Layout: `radar/config.py` holds every tunable value and source list; `radar/sources/` the collectors; `radar/rank.py` clustering, scoring and the floor; `radar/store.py` SQLite; `radar/digest.py` the output.
 - All HTTP collectors send a fixed, honest user agent that names the tool. Do not imitate a browser.
 - Notion: the pipeline never writes to Notion and holds no Notion token. Claude pushes digests to Notion on request through the connector.
 

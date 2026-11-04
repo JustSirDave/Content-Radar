@@ -157,5 +157,13 @@ The pipeline itself has no model. Clustering, scoring and the floor are rule-bas
 1. **X through Google News RSS (phase 2).** Verified to return posts (section 4). Remaining risk: it is a sample, titles are truncated, and Google may change or throttle the feed.
 2. **Reddit.** Blocked from the owner's machine. Open whether any legitimate route exists later.
 3. **Notion destination.** Not chosen. Decide when the first real digest is pushed (a page per day, or a database with one row per topic, are the two candidates).
-4. **First work branch.** The name for the first piece of build work is not chosen.
-5. **Tuning.** All starting values in section 11 are placeholders until real digests exist.
+4. **Tuning.** All starting values in section 11 are placeholders until real digests exist.
+
+**Phase 1 built (branch `feat/phase-1-pipeline`), first live run 2026-11-04: 17 of 23 sources ok.**
+Findings from that run, to act on when tuning:
+- **Off-niche items pass the floor on engagement alone.** A single-source item with 200 or more engagement passes even with no niche term (AMD vs Intel, a hardware Kickstarter). Options: require at least one niche term for the single-source path, or widen the keyword list (for example "openai", "codex", "gpt").
+- **Techpoint blocked the pipeline's plain user agent (HTTP 403)** although it answered an earlier test. It is reported as failed and not worked around.
+- **Stack Overflow, NDPC, NITDA and the Claude status feed returned nothing in the 48-hour window.** These are quiet sources, not errors.
+- **Anthropic sitemap `lastmod` looks like bulk updates** (many old pages share mid-October dates), so the collector fails loudly if more than 15 news pages change in one window instead of flooding the digest.
+- Reddit failed with HTTP 403 on all five subreddits, as expected.
+- Clustering at the current thresholds merged the same story across Hacker News and OpenAI's feed, but cross-outlet merging depends on shared title words and needs checking on more data.
