@@ -20,7 +20,7 @@ NICHE_TERMS: dict[str, int] = {
     "claude code": 3, "mcp": 3, "ai agent": 3, "whatsapp business api": 3,
     "whatsapp ai": 3, "rag": 3, "llm evals": 3, "model deprecation": 3,
     "cbn": 3, "ndpa": 3, "ndpc": 3, "nitda": 3,
-    "openai": 2, "codex": 2, "gpt": 2, "agentic": 2, "agent": 1,
+    "claude": 2, "openai": 2, "codex": 2, "gpt": 2, "agentic": 2, "agent": 1,
     "llm": 2, "openai api": 2, "anthropic": 2, "n8n": 2, "whisper": 2,
     "voice transcription": 2, "fintech nigeria": 2, "lagos": 2, "nigeria": 2,
     "africa startup": 2, "data localisation": 2, "data localization": 2,
@@ -103,12 +103,21 @@ HACKERNEWS_QUERIES = [
     "openai", "nigeria", "africa", "n8n", "model deprecation",
 ]
 
-# Google News RSS queries: (name, query, kind, enabled). X sample is phase 2 and off.
+# Google News RSS queries: (name, query, kind, enabled).
+# Every name starting "x_" is a sample of X posts: text only, no like counts, so all of
+# them count as ONE independent publisher ("x") when corroborating a topic.
 GOOGLE_NEWS_QUERIES: list[tuple[str, str, str, bool]] = [
     # Searching site:cbn.gov.ng returns library catalogue pages. Searching by topic returns
     # real press coverage of CBN circulars and policy, so these are news, not official posts.
     ("cbn", "Central Bank of Nigeria circular OR directive OR guidelines", "news", True),
-    ("x_claude_code", 'site:x.com "claude code"', "community", False),
-    ("x_ai_agents", 'site:x.com "ai agents"', "community", False),
-    ("x_whatsapp_ai", 'site:x.com "whatsapp" "ai"', "community", False),
+    # Keyword samples of X (community kind: they cannot pass the floor alone).
+    ("x_claude_code", 'site:x.com "claude code"', "community", True),
+    ("x_ai_agents", 'site:x.com "ai agents"', "community", True),
+    ("x_whatsapp_ai", 'site:x.com "whatsapp" "ai"', "community", True),
+    # Official accounts (vendor kind: an on-topic post counts as an official update).
+    ("x_official_claudedevs", "site:x.com/ClaudeDevs", "vendor", True),
+    ("x_official_claudeai", "site:x.com/claudeai", "vendor", True),
+    ("x_official_anthropic", "site:x.com/AnthropicAI", "vendor", True),
+    ("x_official_openaidevs", "site:x.com/OpenAIDevs", "vendor", True),
+    ("x_official_metafordevs", "site:x.com/MetaforDevs", "vendor", True),
 ]

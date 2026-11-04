@@ -72,6 +72,31 @@ class ScoringTests(unittest.TestCase):
         self.assertGreater(scores[1], scores[0])
 
 
+class IndependenceTests(unittest.TestCase):
+    def test_several_x_queries_count_as_one_publisher(self):
+        items = [item("a", "Claude Code subagents use less quota now", source="gnews:x_claude_code",
+                      engagement=None),
+                 item("b", "Claude Code subagents use less quota now today", source="gnews:x_ai_agents",
+                      engagement=None, link="https://x.test/b2")]
+        [c] = rank.cluster_items(items)
+        self.assertEqual(c.sources, {"x"})
+
+    def test_x_and_a_news_site_are_two_publishers(self):
+        items = [item("a", "Claude Code subagents use less quota now", source="gnews:x_claude_code",
+                      engagement=None),
+                 item("b", "Claude Code subagents use less quota now", source="rss:techcabal", kind="news",
+                      engagement=None, link="https://x.test/b2")]
+        [c] = rank.cluster_items(items)
+        self.assertEqual(c.sources, {"x", "rss:techcabal"})
+
+    def test_official_account_post_on_topic_passes_the_floor(self):
+        items = [item("a", "October was a big month for Claude Code: we shipped mods", source="gnews:x_official_claudedevs",
+                      kind="vendor", engagement=None)]
+        [c] = rank.cluster_items(items)
+        rank.score_cluster(c, NOW, rank.engagement_percentiles(items))
+        self.assertTrue(c.passes_floor)
+
+
 class NicheTermTests(unittest.TestCase):
     def test_terms_match_whole_words_only(self):
         self.assertEqual(rank.niche_hits("Average storage in a garage"), [])

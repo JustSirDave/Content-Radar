@@ -60,3 +60,9 @@ Date: 2026-11-04 | Status: approved
 Context: Anthropic has no news feed. Its sitemap `lastmod` carries site maintenance dates (old posts such as "Claude's constitution" had recent dates), so dates cannot identify new posts.
 Decision: Remember every `/news/` page. The first read is a baseline and reports nothing. Later runs report only pages not seen before. Posts published before the baseline are not recovered automatically.
 Alternatives: Trust `lastmod` (flooded the digest with old posts); read `claude.com/blog` (script-rendered, no feed).
+
+## D-011 — X through Google News: keyword samples plus official accounts, counted as one publisher
+Date: 2026-11-04 | Status: approved
+Context: The owner wanted to see vendor announcements such as Anthropic's October recap. It was an X post from the Claude Code account, found in the Google News sample but below the floor, because an X post has no engagement counts and a single post alone cannot qualify.
+Decision: Enable the X sample (pulled forward from phase 2). Keyword queries stay community kind. Searches scoped to official accounts (ClaudeDevs, claudeai, AnthropicAI, OpenAIDevs, MetaforDevs) are vendor kind and appear in the vendor and regulator section when on topic. All X queries count as one independent publisher so they cannot corroborate each other. "claude" added as a niche term.
+Alternatives: Keep X off until phase 2 (hides official announcements); trust query count as corroboration (the same sample counted twice).

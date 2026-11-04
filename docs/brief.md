@@ -36,7 +36,9 @@ Claude is a second consumer of the output. The owner asks Claude, in chat, to re
 - Anthropic: no news RSS feed exists. Used: GitHub releases Atom feeds (`claude-code`, `anthropic-sdk-python`), the `status.claude.com` feed, and the `anthropic.com` sitemap as a new-only source. The sitemap's `lastmod` is a site maintenance date (old posts carry recent dates), so it is ignored; the pipeline remembers every `/news/` page, treats the first read as a baseline that reports nothing, and reports only pages that appear afterwards. `claude.com/blog` is a script-rendered page with no feed and is not read. Note: urllib in Python 3.10 does not follow HTTP 308, so the HTTP layer handles it.
 - Meta: three feeds (developers blog, newsroom, engineering blog), all verified working.
 - Nigerian regulators, checked 2026-11-04: NDPC (`ndpc.gov.ng/feed/`) and NITDA (`nitda.gov.ng/feed/`) have working RSS feeds. CBN has no feed. Searching Google News for `site:cbn.gov.ng` returns library catalogue pages, so the CBN source searches by topic ("Central Bank of Nigeria circular OR directive OR guidelines"), which returns press coverage. These items are classed as news.
-- X sample through Google News RSS, verified on 2026-11-04 (phase 2): a `site:x.com` query with a `when:2d` window returned 100 items whose titles are the post text, labelled "- X". It carries no like or repost counts, so X items can only add corroboration and recency, not engagement.
+- X through Google News RSS, enabled 2026-11-04 (pulled forward from phase 2): `site:x.com` queries return about 100 items each, whose titles are the post text, labelled "- X". There are no like or repost counts. Two kinds of query:
+  - Keyword samples ("claude code", "ai agents", "whatsapp" "ai"): community kind, so an X post alone never passes the floor; it can only add corroboration. All X queries count as one independent publisher ("x"), so they cannot corroborate each other.
+  - Official accounts (`site:x.com/ClaudeDevs`, `/claudeai`, `/AnthropicAI`, `/OpenAIDevs`, `/MetaforDevs`): vendor kind, so an on-topic post counts as an official update and appears in the vendor and regulator section. This is how the 3 Nov "October was a big month for Claude Code" post from `@ClaudeDevs` is found.
 - YouTube (official API), optional
 
 **Pipeline**
@@ -160,7 +162,7 @@ The pipeline itself has no model. Clustering, scoring and the floor are rule-bas
 - Git: repository initialised with `dev` as the default branch.
 
 **Still open**
-1. **X through Google News RSS (phase 2).** Verified to return posts (section 4). Remaining risk: it is a sample, titles are truncated, and Google may change or throttle the feed.
+1. **X through Google News RSS.** Now enabled and returning fresh posts (section 4). Remaining risk: it is a sample, titles are truncated, post authors are not shown, and Google may change or throttle the feed.
 2. **Reddit.** Blocked from the owner's machine. Open whether any legitimate route exists later.
 3. **Notion destination.** Not chosen. Decide when the first real digest is pushed (a page per day, or a database with one row per topic, are the two candidates).
 4. **Tuning.** All starting values in section 11 are placeholders until real digests exist.

@@ -38,6 +38,12 @@ def tokens(text: str) -> set[str]:
     return {w.lower() for w in _WORD_RE.findall(text or "") if len(w) > 2 and w.lower() not in _STOPWORDS}
 
 
+def publisher(source: str) -> str:
+    """Independent publisher behind a source. Several X queries are one sample of one platform,
+    so they must not corroborate each other."""
+    return "x" if source.startswith("gnews:x_") else source
+
+
 def jaccard(a: set[str], b: set[str]) -> float:
     if not a or not b:
         return 0.0
@@ -64,7 +70,7 @@ class Cluster:
 
     @property
     def sources(self) -> set[str]:
-        return {i["source"] for i in self.items}
+        return {publisher(i["source"]) for i in self.items}
 
     @property
     def kinds(self) -> set[str]:
