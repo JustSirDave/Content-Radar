@@ -9,7 +9,11 @@ HTTP_RETRIES = 2
 DEFAULT_LOOKBACK_HOURS = 48  # used when a source has never succeeded
 MAX_LOOKBACK_HOURS = 24 * 7  # catch-up never reaches further back than a week
 OVERLAP_HOURS = 1  # re-read a little before the last success so nothing slips through
-RANK_WINDOW_HOURS = 96  # items older than this are not ranked
+# Items older than this (by kind) are not ranked. Vendors and regulators post rarely and
+# monthly recaps matter, so they stay in view for 30 days; recency still decays their score.
+RANK_WINDOW_HOURS_BY_KIND = {"community": 96, "news": 168, "vendor": 720, "regulator": 720}
+# Used by the first read of a source that has never succeeded.
+DEFAULT_LOOKBACK_HOURS_BY_KIND = {"community": 48, "news": 168, "vendor": 720, "regulator": 720}
 
 # Niche keywords: weight 3 is strongest.
 NICHE_TERMS: dict[str, int] = {
@@ -21,6 +25,11 @@ NICHE_TERMS: dict[str, int] = {
     "voice transcription": 2, "fintech nigeria": 2, "lagos": 2, "nigeria": 2,
     "africa startup": 2, "data localisation": 2, "data localization": 2,
     "automation": 1, "chatbot": 1, "python": 1, "open source": 1, "startup": 1,
+    # Added 2026-11-04: Africa, business and entrepreneurship coverage.
+    "whatsapp": 3, "cloud api": 2, "graph api": 1,
+    "africa": 2, "african": 2, "nigerian": 2, "fintech": 2, "entrepreneurship": 2,
+    "entrepreneur": 2, "kenya": 1, "ghana": 1, "naira": 1, "sme": 1, "founder": 1,
+    "funding": 1, "raises": 1, "business": 1,
 }
 NICHE_SATURATION = 6  # matched weight at which relevance reaches 1.0
 
@@ -56,6 +65,8 @@ FLOOR_MIN_SOURCES = 2
 FLOOR_SINGLE_SOURCE_ENGAGEMENT = 100.0  # lowered from 200 on 2026-11-04; the niche-term rule now guards noise
 
 TOP_N = 12
+OFFICIAL_SECTION_LIMIT = 8  # vendor and regulator updates shown apart from the main list
+OFFICIAL_PER_SOURCE = 2
 MAX_SOURCE_SHARE = 0.4  # no single source may fill more than this share of the digest
 
 TOPIC_MATCH_JACCARD = 0.5
@@ -72,6 +83,8 @@ FEEDS: list[tuple[str, str, str, str]] = [
     ("weetracker", "https://weetracker.com/feed/", "news", ""),
     ("openai_news", "https://openai.com/news/rss.xml", "vendor", ""),
     ("meta_dev_blog", "https://developers.facebook.com/blog/feed/", "vendor", "Meta developers: "),
+    ("meta_newsroom", "https://about.fb.com/news/feed/", "vendor", "Meta: "),
+    ("meta_engineering", "https://engineering.fb.com/feed/", "vendor", "Meta engineering: "),
     ("ndpc", "https://ndpc.gov.ng/feed/", "regulator", ""),
     ("nitda", "https://nitda.gov.ng/feed/", "regulator", ""),
     ("claude_code_releases", "https://github.com/anthropics/claude-code/releases.atom", "vendor", "Claude Code release: "),
@@ -80,7 +93,6 @@ FEEDS: list[tuple[str, str, str, str]] = [
 ]
 
 ANTHROPIC_SITEMAP_URL = "https://www.anthropic.com/sitemap.xml"
-SITEMAP_BULK_UPDATE_LIMIT = 15  # more changed news pages than this in one window means bulk lastmod
 
 STACKOVERFLOW_TAGS = ["openai-api", "langchain", "whatsapp-cloud-api", "large-language-model"]
 GITHUB_TOPICS = ["mcp-server", "ai-agents", "whatsapp-bot"]
@@ -93,7 +105,9 @@ HACKERNEWS_QUERIES = [
 
 # Google News RSS queries: (name, query, kind, enabled). X sample is phase 2 and off.
 GOOGLE_NEWS_QUERIES: list[tuple[str, str, str, bool]] = [
-    ("cbn", "site:cbn.gov.ng", "regulator", True),
+    # Searching site:cbn.gov.ng returns library catalogue pages. Searching by topic returns
+    # real press coverage of CBN circulars and policy, so these are news, not official posts.
+    ("cbn", "Central Bank of Nigeria circular OR directive OR guidelines", "news", True),
     ("x_claude_code", 'site:x.com "claude code"', "community", False),
     ("x_ai_agents", 'site:x.com "ai agents"', "community", False),
     ("x_whatsapp_ai", 'site:x.com "whatsapp" "ai"', "community", False),

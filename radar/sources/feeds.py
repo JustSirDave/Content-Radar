@@ -125,36 +125,30 @@ def collect_google_news(name: str, query: str, kind: str, since: datetime) -> Co
 
 
 def collect_anthropic_sitemap(since: datetime) -> CollectResult:
-    """Anthropic has no news feed. Detect new /news/ pages from the sitemap's lastmod dates."""
+    """Anthropic has no news feed. Return every /news/ page in the sitemap.
+
+    The sitemap's lastmod is a site maintenance date, not a publication date (old posts carry
+    recent dates), so it is not used. The pipeline treats this source as new-only: it
+    remembers which pages it has seen and reports a page the first time it appears.
+    """
     root = ET.fromstring(fetch(config.ANTHROPIC_SITEMAP_URL, accept="application/xml, */*"))
     if _local(root.tag) != "urlset":
         raise ValueError(f"unexpected sitemap root element: {_local(root.tag)}")
+    seen_at = datetime.now(timezone.utc)
     signals: list[Signal] = []
-    skipped = 0
     for url_el in _children(root, "url"):
         loc = _first_text(url_el, "loc")
         if "/news/" not in loc:
-            continue
-        lastmod = parse_date(_first_text(url_el, "lastmod"))
-        if lastmod is None:
-            skipped += 1
-            continue
-        if lastmod < since:
             continue
         slug = loc.rstrip("/").rsplit("/", 1)[-1].replace("-", " ")
         signals.append(
             Signal(
                 source="anthropic_sitemap", kind="vendor", item_id=loc,
-                title=f"Anthropic news: {slug}", text="", link=loc, published=lastmod,
+                title=f"Anthropic news: {slug}", text="", link=loc, published=seen_at,
                 engagement=None, query=config.ANTHROPIC_SITEMAP_URL,
             )
         )
-    if len(signals) > config.SITEMAP_BULK_UPDATE_LIMIT:
-        raise ValueError(
-            f"{len(signals)} news pages changed at once; lastmod looks like a bulk update, "
-            "so the dates cannot be trusted"
-        )
-    return CollectResult(signals, skipped, "dates come from sitemap lastmod, not publication time")
+    return CollectResult(signals, 0, "title comes from the page address; date is when first seen")
 
 
 __all__ = ["FetchError", "parse_feed", "collect_feed", "collect_google_news",

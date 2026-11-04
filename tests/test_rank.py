@@ -104,6 +104,25 @@ class FloorTests(unittest.TestCase):
         self.assertFalse(c.passes_floor)
         self.assertEqual(c.floor_reason, "no niche term matched")
 
+    def test_news_item_on_topic_passes_without_engagement(self):
+        c = self._floor([item("a", "Nigerian fintech startup raises seed funding", source="rss:techcabal",
+                              kind="news", engagement=None)])
+        self.assertTrue(c.passes_floor)
+        self.assertEqual(c.floor_reason, "editorial source, on topic")
+
+    def test_vendor_item_off_niche_still_fails(self):
+        c = self._floor([item("a", "Marketing API changes for advertisers", source="rss:meta", kind="vendor",
+                              engagement=None)])
+        self.assertFalse(c.passes_floor)
+
+    def test_community_item_on_topic_but_weak_still_fails(self):
+        c = self._floor([item("a", "My Claude Code MCP setup", engagement=5)])
+        self.assertFalse(c.passes_floor)
+
+    def test_africa_and_business_terms_match(self):
+        self.assertIn("africa", rank.niche_hits("Africa startup funding round"))
+        self.assertIn("entrepreneurship", rank.niche_hits("Youth entrepreneurship in Lagos"))
+
     def test_multi_source_off_niche_item_also_fails(self):
         c = self._floor([item("a", "Flipper One Kickstarter opens pre-orders", source="hackernews"),
                          item("b", "Flipper One Kickstarter opens pre-orders today", source="devto",
@@ -120,6 +139,24 @@ class FloorTests(unittest.TestCase):
         c = self._floor([item("a", "Library will be removed in March", source="rss:x", kind="vendor",
                               engagement=None)])
         self.assertFalse(c.passes_floor)
+
+
+class OfficialSectionTests(unittest.TestCase):
+    def test_per_source_cap_and_kind_filter(self):
+        topics = ["adds MCP server timeouts", "fixes agent hook crash", "improves whatsapp bot demo",
+                  "new codex style planning mode", "faster rag indexing for large repos"]
+        items = [item(f"r{i}", f"Claude Code release: {topic}", source="rss:claude_code_releases",
+                      kind="vendor", engagement=None) for i, topic in enumerate(topics)]
+        items += [item("n1", "Nigerian fintech startup raises seed funding", source="rss:techcabal",
+                       kind="news", engagement=None),
+                  item("m1", "Meta developers: WhatsApp Cloud API changes for businesses", source="rss:meta",
+                       kind="vendor", engagement=None)]
+        passing, _ = rank.rank(items, NOW)
+        official = rank.pick_official(passing, limit=8, per_source=2)
+        sources = [c.lead["source"] for c in official]
+        self.assertEqual(sources.count("rss:claude_code_releases"), 2)
+        self.assertIn("rss:meta", sources)
+        self.assertNotIn("rss:techcabal", sources)  # news is not vendor or regulator
 
 
 class RankTests(unittest.TestCase):

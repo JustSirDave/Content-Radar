@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS snapshots (
 );
 CREATE INDEX IF NOT EXISTS idx_snapshots_key ON snapshots(key, taken_at);
 CREATE TABLE IF NOT EXISTS source_state (source TEXT PRIMARY KEY, last_ok TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS seen_keys (key TEXT PRIMARY KEY, first_seen TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS topics (
     id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, first_seen TEXT NOT NULL,
     last_seen TEXT NOT NULL, times_surfaced INTEGER NOT NULL DEFAULT 0,
@@ -96,6 +97,19 @@ class Store:
                         "first_seen": from_iso(row["first_seen"]),
                         "engagement": latest, "velocity": velocity})
         return out
+
+    # --- new-only sources (page lists with no usable dates) --------------------------
+
+    def unseen_keys(self, keys: list[str]) -> set[str]:
+        have = {r["key"] for r in self.db.execute("SELECT key FROM seen_keys")}
+        return {k for k in keys if k not in have}
+
+    def mark_seen(self, keys: list[str], when: datetime) -> None:
+        with self.db:
+            self.db.executemany(
+                "INSERT OR IGNORE INTO seen_keys(key, first_seen) VALUES (?, ?)",
+                [(k, iso(when)) for k in keys],
+            )
 
     # --- per-source catch-up ---------------------------------------------------------
 

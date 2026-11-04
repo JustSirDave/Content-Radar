@@ -191,6 +191,10 @@ def apply_floor(c: Cluster) -> None:
         c.passes_floor, c.floor_reason = True, f"{len(c.sources)} independent sources"
     elif "quiet_important" in c.bonuses:
         c.passes_floor, c.floor_reason = True, "official source, quiet-important, on topic"
+    elif c.kinds & config.OFFICIAL_KINDS:
+        # News sites, vendors and regulators publish no engagement counts, so engagement can
+        # never clear the bar for them. Their editorial choice to publish is the signal.
+        c.passes_floor, c.floor_reason = True, "editorial source, on topic"
     else:
         c.passes_floor, c.floor_reason = False, "below the confidence floor"
 
@@ -205,6 +209,23 @@ def rank(items: list[dict], now: datetime) -> tuple[list[Cluster], list[Cluster]
     passing = [c for c in clusters if c.passes_floor]
     below = [c for c in clusters if not c.passes_floor]
     return passing, below
+
+
+def pick_official(clusters: list[Cluster], limit: int, per_source: int) -> list[Cluster]:
+    """Best vendor and regulator updates, a few per source, so one feed (say, Claude Code
+    release notes) cannot fill the section."""
+    picked: list[Cluster] = []
+    used: dict[str, int] = {}
+    for c in clusters:
+        if not (c.kinds & {"vendor", "regulator"}):
+            continue
+        if used.get(c.lead["source"], 0) >= per_source:
+            continue
+        picked.append(c)
+        used[c.lead["source"]] = used.get(c.lead["source"], 0) + 1
+        if len(picked) >= limit:
+            break
+    return picked
 
 
 def diversify(clusters: list[Cluster], top_n: int) -> list[Cluster]:

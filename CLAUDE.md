@@ -4,7 +4,7 @@ A local Python pipeline that collects public posts and articles from free source
 
 ## Stack
 
-- Python, SQLite, Windows Task Scheduler. No model API is called by the pipeline.
+- Python, SQLite. No model API is called by the pipeline. Run manually; there is no schedule.
 - Package manager: pip with venv.
 - Standard library only (Python 3.10+). `requirements.txt` has no packages.
 - Commands, run from the project folder:
@@ -14,7 +14,6 @@ A local Python pipeline that collects public posts and articles from free source
   - List remembered topics: `python -m radar topics [--status open]`
   - Tests: `python -m unittest discover -s tests -t .`
   - Lint: none configured yet.
-- Schedule: `scripts/register_task.ps1` registers the Windows task (every 4 hours, runs after a missed start). It changes Windows settings, so the owner runs it.
 - Layout: `radar/config.py` holds every tunable value and source list; `radar/sources/` the collectors; `radar/rank.py` clustering, scoring and the floor; `radar/store.py` SQLite; `radar/digest.py` the output.
 - All HTTP collectors send a fixed, honest user agent that names the tool. Do not imitate a browser.
 - Notion: the pipeline never writes to Notion and holds no Notion token. Claude pushes digests to Notion on request through the connector.
@@ -35,7 +34,7 @@ A local Python pipeline that collects public posts and articles from free source
 
 - **Money and payments:** not applicable. The product handles no money, so the standing defaults (NGN, Paystack, Flutterwave, bank transfer, USSD, integer minor-unit storage) do not apply.
 - **NDPA 2023:** applies only if personal data is stored. Collected items are public posts, and author handles and names are not stored (decided). If that changes, add NDPA handling before storing them.
-- **Channel and bandwidth:** Windows 11 desktop, command line, files. No mobile, web or WhatsApp interface. Expect an unreliable connection and a computer that is sometimes off, so use timeouts, bounded retries and catch-up runs.
+- **Channel and bandwidth:** Windows 11 desktop, command line, files. No mobile, web or WhatsApp interface. Expect an unreliable connection and long gaps between manual runs, so use timeouts, bounded retries and per-source catch-up.
 
 ## Git rules
 

@@ -72,7 +72,9 @@ class PipelineTests(unittest.TestCase):
     def test_catch_up_reads_from_last_success_within_limits(self):
         store = Store(":memory:")
         self.assertEqual(pipeline.since_for(store, "s", NOW, None),
-                         NOW - timedelta(hours=config.DEFAULT_LOOKBACK_HOURS))
+                         NOW - timedelta(hours=config.DEFAULT_LOOKBACK_HOURS_BY_KIND["community"]))
+        self.assertEqual(pipeline.since_for(store, "v", NOW, None, kind="vendor"),
+                         NOW - timedelta(hours=config.DEFAULT_LOOKBACK_HOURS_BY_KIND["vendor"]))
         store.mark_ok("s", NOW - timedelta(hours=10))
         self.assertEqual(pipeline.since_for(store, "s", NOW, None),
                          NOW - timedelta(hours=10 + config.OVERLAP_HOURS))
