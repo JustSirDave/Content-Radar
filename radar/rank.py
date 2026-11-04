@@ -165,13 +165,19 @@ def score_cluster(c: Cluster, now: datetime, percentiles: dict[str, float]) -> N
 
 
 def apply_floor(c: Cluster) -> None:
-    """Absolute evidence bar. A relative ranker alone would show noise on a quiet day."""
+    """Absolute evidence bar. A relative ranker alone would show noise on a quiet day.
+
+    Every path first requires at least one niche term, so popular but off-niche items
+    (hardware news, unrelated launches) never reach the digest on engagement alone.
+    """
     total = c.engagement_total
-    if total is not None and total >= config.FLOOR_SINGLE_SOURCE_ENGAGEMENT:
+    if not c.niche_hits:
+        c.passes_floor, c.floor_reason = False, "no niche term matched"
+    elif total is not None and total >= config.FLOOR_SINGLE_SOURCE_ENGAGEMENT:
         c.passes_floor, c.floor_reason = True, f"engagement {total:.0f} >= {config.FLOOR_SINGLE_SOURCE_ENGAGEMENT:.0f}"
     elif len(c.sources) >= config.FLOOR_MIN_SOURCES and (total is None or total >= config.FLOOR_MIN_ENGAGEMENT):
         c.passes_floor, c.floor_reason = True, f"{len(c.sources)} independent sources"
-    elif "quiet_important" in c.bonuses and c.niche_hits:
+    elif "quiet_important" in c.bonuses:
         c.passes_floor, c.floor_reason = True, "official source, quiet-important, on topic"
     else:
         c.passes_floor, c.floor_reason = False, "below the confidence floor"

@@ -161,7 +161,7 @@ The pipeline itself has no model. Clustering, scoring and the floor are rule-bas
 
 **Phase 1 built (branch `feat/phase-1-pipeline`), first live run 2026-11-04: 17 of 23 sources ok.**
 Findings from that run, to act on when tuning:
-- **Off-niche items pass the floor on engagement alone.** A single-source item with 200 or more engagement passes even with no niche term (AMD vs Intel, a hardware Kickstarter). Options: require at least one niche term for the single-source path, or widen the keyword list (for example "openai", "codex", "gpt").
+- **Off-niche items passed the floor on engagement alone** (AMD vs Intel, a hardware Kickstarter). Fixed: every floor path now requires at least one niche term. Effect on the same data: 6 topics shown became 1, so the keyword list is now the limiting factor. Items cut that look relevant: "Pierre Computer is being acquired by OpenAI" (no term for "openai"), and "YC's Garry Tan uses AI agents ... $200K on tokens" (matched "ai agent" but had 111 engagement against the 200 single-source bar). Candidate changes: add "openai", "codex", "gpt" and "agent" terms, and lower the single-source engagement bar from 200 to about 100 for items that match a niche term.
 - **Techpoint blocked the pipeline's plain user agent (HTTP 403)** although it answered an earlier test. It is reported as failed and not worked around.
 - **Stack Overflow, NDPC, NITDA and the Claude status feed returned nothing in the 48-hour window.** These are quiet sources, not errors.
 - **Anthropic sitemap `lastmod` looks like bulk updates** (many old pages share mid-October dates), so the collector fails loudly if more than 15 news pages change in one window instead of flooding the digest.

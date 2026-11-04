@@ -83,7 +83,19 @@ class FloorTests(unittest.TestCase):
         self.assertFalse(c.passes_floor)
 
     def test_big_single_source_item_passes(self):
-        self.assertTrue(self._floor([item("a", "A huge post", engagement=500)]).passes_floor)
+        c = self._floor([item("a", "Claude Code MCP agent goes viral", engagement=500)])
+        self.assertTrue(c.passes_floor)
+
+    def test_big_but_off_niche_item_fails_the_floor(self):
+        c = self._floor([item("a", "AMD expects to outsell Intel in Q4", engagement=5000)])
+        self.assertFalse(c.passes_floor)
+        self.assertEqual(c.floor_reason, "no niche term matched")
+
+    def test_multi_source_off_niche_item_also_fails(self):
+        c = self._floor([item("a", "Flipper One Kickstarter opens pre-orders", source="hackernews"),
+                         item("b", "Flipper One Kickstarter opens pre-orders today", source="devto",
+                              link="https://x.test/b2")])
+        self.assertFalse(c.passes_floor)
 
     def test_quiet_important_official_item_passes_without_engagement(self):
         c = self._floor([item("a", "CBN circular sets data localisation deadline", source="gnews:cbn",
