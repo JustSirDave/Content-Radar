@@ -217,13 +217,19 @@ def rank(items: list[dict], now: datetime) -> tuple[list[Cluster], list[Cluster]
     return passing, below
 
 
+def is_story(c: Cluster) -> bool:
+    """True if a community or news source (other than the X sample) carries the topic.
+    Clusters that only vendors, regulators or X posts carry are updates, not stories."""
+    return any(i["kind"] in ("community", "news") and publisher(i["source"]) != "x" for i in c.items)
+
+
 def pick_official(clusters: list[Cluster], limit: int, per_source: int) -> list[Cluster]:
     """Best vendor and regulator updates, a few per source, so one feed (say, Claude Code
     release notes) cannot fill the section."""
     picked: list[Cluster] = []
     used: dict[str, int] = {}
     for c in clusters:
-        if not (c.kinds & {"vendor", "regulator"}):
+        if not (c.kinds & {"vendor", "regulator"}) and is_story(c):
             continue
         if used.get(c.lead["source"], 0) >= per_source:
             continue

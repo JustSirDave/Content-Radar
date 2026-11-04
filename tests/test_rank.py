@@ -166,6 +166,24 @@ class FloorTests(unittest.TestCase):
         self.assertFalse(c.passes_floor)
 
 
+class StoryTests(unittest.TestCase):
+    def test_official_post_copied_by_an_x_keyword_query_is_not_a_story(self):
+        items = [item("a", "Background subagents in Claude Code use less quota", source="gnews:x_official_claudedevs",
+                      kind="vendor", engagement=None),
+                 item("b", "Background subagents in Claude Code use less quota", source="gnews:x_claude_code",
+                      kind="community", engagement=None, link="https://x.test/b2")]
+        [c] = rank.cluster_items(items)
+        self.assertFalse(rank.is_story(c))
+
+    def test_the_same_post_also_on_hacker_news_is_a_story(self):
+        items = [item("a", "Background subagents in Claude Code use less quota", source="gnews:x_official_claudedevs",
+                      kind="vendor", engagement=None),
+                 item("b", "Background subagents in Claude Code use less quota", source="hackernews",
+                      engagement=40, link="https://x.test/b2")]
+        [c] = rank.cluster_items(items)
+        self.assertTrue(rank.is_story(c))
+
+
 class OfficialSectionTests(unittest.TestCase):
     def test_per_source_cap_and_kind_filter(self):
         topics = ["adds MCP server timeouts", "fixes agent hook crash", "improves whatsapp bot demo",

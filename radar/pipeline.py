@@ -137,7 +137,11 @@ def run(db_path: str, out_dir: str, override_hours: float | None = None,
         ]
         passing, below = rank.rank(items, started)
         visible = apply_topic_memory(store, passing, started)
-        shown = rank.diversify(visible, config.TOP_N)
+        # Release notes, status posts and official-account posts are updates to know about,
+        # not stories to write about, so they stay out of the main list unless the story also
+        # appears on a community or news source.
+        main_pool = [c for c in visible if rank.is_story(c)]
+        shown = rank.diversify(main_pool, config.TOP_N)
         official = rank.pick_official(
             [c for c in visible if c not in shown],
             config.OFFICIAL_SECTION_LIMIT, config.OFFICIAL_PER_SOURCE,

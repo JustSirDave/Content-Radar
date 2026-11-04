@@ -66,3 +66,9 @@ Date: 2026-11-04 | Status: approved
 Context: The owner wanted to see vendor announcements such as Anthropic's October recap. It was an X post from the Claude Code account, found in the Google News sample but below the floor, because an X post has no engagement counts and a single post alone cannot qualify.
 Decision: Enable the X sample (pulled forward from phase 2). Keyword queries stay community kind. Searches scoped to official accounts (ClaudeDevs, claudeai, AnthropicAI, OpenAIDevs, MetaforDevs) are vendor kind and appear in the vendor and regulator section when on topic. All X queries count as one independent publisher so they cannot corroborate each other. "claude" added as a niche term.
 Alternatives: Keep X off until phase 2 (hides official announcements); trust query count as corroboration (the same sample counted twice).
+
+## D-012 — Vendor-only topics stay out of the main list
+Date: 2026-11-04 | Status: approved
+Context: Release notes (for example "Anthropic Python SDK release v2.5.0") and official-account posts took main-list slots, but they are updates to know about, not stories to write about.
+Decision: A topic enters the main list only if a community or news source other than the X sample carries it. Topics carried only by vendors, regulators or X posts appear only in the vendor and regulator section.
+Alternatives: Keep one mixed list (crowds out stories); exclude release feeds entirely (loses useful updates).

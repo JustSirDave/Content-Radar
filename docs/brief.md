@@ -48,7 +48,7 @@ Claude is a second consumer of the output. The owner asks Claude, in chat, to re
 - Topic memory: times surfaced, first and last seen, `covered` and `dismissed` states.
 - Per-source failure isolation and a source-health report in every digest.
 - Per-source catch-up after gaps between manual runs.
-- A separate "Vendor and regulator updates" section in the digest (up to 8, at most 2 per source), because those sources publish no engagement counts and post rarely, so the main ranking would crowd them out.
+- A separate "Vendor and regulator updates" section in the digest (up to 8, at most 2 per source), because those sources publish no engagement counts and post rarely, so the main ranking would crowd them out. A topic goes in the main list only if a community or news source (other than the X sample) carries it; topics carried only by vendors, regulators or X posts (release notes, status posts, official-account posts) are updates, not stories, and appear only in this section.
 
 **Phase 2 additions**
 - X sample through Google News `site:x.com` RSS (no key, no like counts).

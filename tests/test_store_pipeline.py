@@ -99,6 +99,25 @@ class PipelineTests(unittest.TestCase):
             digest = (Path(out) / "2026-11-04.md").read_text(encoding="utf-8")
             self.assertIn("Nothing worth posting today", digest)  # covered, no new evidence
 
+    def test_vendor_only_items_go_to_the_official_section_not_the_main_list(self):
+        vendor = Signal(source="rss:claude_code_releases", kind="vendor", item_id="v1",
+                        title="Claude Code release: adds MCP agent hooks", text="",
+                        link="https://x.test/v1", published=NOW - timedelta(hours=1),
+                        engagement=None, query="q")
+        news = Signal(source="rss:techcabal", kind="news", item_id="n1",
+                      title="Nigerian fintech startup raises seed funding", text="",
+                      link="https://x.test/n1", published=NOW - timedelta(hours=1),
+                      engagement=None, query="q")
+        with tempfile.TemporaryDirectory() as tmp:
+            tasks = [pipeline.Task("t", lambda since: CollectResult([vendor, news]))]
+            self.assertEqual(pipeline.run(str(Path(tmp) / "r.db"), str(Path(tmp) / "o"), tasks=tasks,
+                                          now=NOW), 0)
+            text = (Path(tmp) / "o" / "2026-11-04.md").read_text(encoding="utf-8")
+        main, official = text.split("## Vendor and regulator updates")
+        self.assertIn("Nigerian fintech startup raises seed funding", main)
+        self.assertNotIn("Claude Code release", main)
+        self.assertIn("Claude Code release", official)
+
     def test_all_sources_failing_returns_exit_code_2(self):
         def boom(since):
             raise RuntimeError("down")
