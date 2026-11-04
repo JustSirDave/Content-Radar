@@ -72,6 +72,19 @@ class ScoringTests(unittest.TestCase):
         self.assertGreater(scores[1], scores[0])
 
 
+class NicheTermTests(unittest.TestCase):
+    def test_terms_match_whole_words_only(self):
+        self.assertEqual(rank.niche_hits("Average storage in a garage"), [])
+        self.assertEqual(rank.niche_hits("A new RAG pipeline"), ["rag"])
+
+    def test_plurals_match(self):
+        self.assertIn("ai agent", rank.niche_hits("Why AI agents fail"))
+
+    def test_new_terms_match(self):
+        self.assertEqual(rank.niche_hits("OpenAI to acquire Pierre"), ["openai"])
+        self.assertIn("codex", rank.niche_hits("Codex chats and model training"))
+
+
 class FloorTests(unittest.TestCase):
     def _floor(self, items):
         [c] = rank.cluster_items(items)

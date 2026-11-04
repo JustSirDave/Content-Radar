@@ -110,12 +110,13 @@ Python with pip and venv, SQLite, Windows Task Scheduler. No model API is used.
 
 **Starting tuning values (to be tuned on real digests):**
 - Recency half-life: 24 hours for Hacker News and Reddit, 48 hours for news sites, 72 hours for GitHub.
-- Confidence floor: a topic needs at least 25 total engagement and 2 independent sources, or at least 200 engagement from a single source.
+- Confidence floor: every path first requires at least one niche term. Then a topic needs at least 25 total engagement and 2 independent sources, or at least 100 engagement from a single source (lowered from 200 on 2026-11-04), or to be a quiet-important item from an official source.
 
 **Starting niche keywords (weight 3 is strongest):**
 - 3: claude code, mcp, ai agent, whatsapp business api, whatsapp ai, rag, llm evals, model deprecation, cbn, ndpa, ndpc, nitda
-- 2: llm, openai api, anthropic, n8n, whisper, voice transcription, fintech nigeria, lagos, nigeria, africa startup, data localisation
-- 1: automation, chatbot, python, open source, startup
+- 2: openai, codex, gpt, agentic (added 2026-11-04), llm, openai api, anthropic, n8n, whisper, voice transcription, fintech nigeria, lagos, nigeria, africa startup, data localisation
+- 1: agent (added 2026-11-04), automation, chatbot, python, open source, startup
+- Terms match whole words only, plurals allowed (plain substring matching had let "rag" fire inside "storage").
 
 **Starting lists (unverified, adjust after real digests):**
 - Stack Overflow tags: openai-api, langchain, whatsapp-cloud-api, large-language-model
@@ -161,7 +162,7 @@ The pipeline itself has no model. Clustering, scoring and the floor are rule-bas
 
 **Phase 1 built (branch `feat/phase-1-pipeline`), first live run 2026-11-04: 17 of 23 sources ok.**
 Findings from that run, to act on when tuning:
-- **Off-niche items passed the floor on engagement alone** (AMD vs Intel, a hardware Kickstarter). Fixed: every floor path now requires at least one niche term. Effect on the same data: 6 topics shown became 1, so the keyword list is now the limiting factor. Items cut that look relevant: "Pierre Computer is being acquired by OpenAI" (no term for "openai"), and "YC's Garry Tan uses AI agents ... $200K on tokens" (matched "ai agent" but had 111 engagement against the 200 single-source bar). Candidate changes: add "openai", "codex", "gpt" and "agent" terms, and lower the single-source engagement bar from 200 to about 100 for items that match a niche term.
+- **Off-niche items passed the floor on engagement alone** (AMD vs Intel, a hardware Kickstarter). Fixed: every floor path now requires at least one niche term. Effect on the same data: 6 topics shown became 1, which exposed a narrow keyword list. Then added the terms "openai", "codex", "gpt", "agentic" and "agent", and lowered the single-source engagement bar from 200 to 100. Result on the same data: 8 on-topic topics, including the OpenAI acquisition and the Garry Tan agent-spend story. Also fixed substring matching to whole-word matching.
 - **Techpoint blocked the pipeline's plain user agent (HTTP 403)** although it answered an earlier test. It is reported as failed and not worked around.
 - **Stack Overflow, NDPC, NITDA and the Claude status feed returned nothing in the 48-hour window.** These are quiet sources, not errors.
 - **Anthropic sitemap `lastmod` looks like bulk updates** (many old pages share mid-October dates), so the collector fails loudly if more than 15 news pages change in one window instead of flooding the digest.

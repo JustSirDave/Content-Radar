@@ -22,6 +22,18 @@ _STOPWORDS = {
 }
 
 
+# Whole-word match, plural allowed. Plain substring matching let "rag" fire inside "storage".
+_TERM_PATTERNS = {
+    term: re.compile(r"(?<![a-z0-9])" + re.escape(term) + r"s?(?![a-z0-9])")
+    for term in config.NICHE_TERMS
+}
+
+
+def niche_hits(text: str) -> list[str]:
+    lowered = text.lower()
+    return sorted(term for term, pattern in _TERM_PATTERNS.items() if pattern.search(lowered))
+
+
 def tokens(text: str) -> set[str]:
     return {w.lower() for w in _WORD_RE.findall(text or "") if len(w) > 2 and w.lower() not in _STOPWORDS}
 
@@ -123,8 +135,8 @@ def score_cluster(c: Cluster, now: datetime, percentiles: dict[str, float]) -> N
     corroboration = min(1.0, (len(c.sources) - 1) / 3)
 
     text = " ".join(i["title"] + " " + i["text"] for i in c.items).lower()
-    hits = [term for term in config.NICHE_TERMS if term in text]
-    c.niche_hits = sorted(hits)
+    hits = niche_hits(text)
+    c.niche_hits = hits
     relevance = min(1.0, sum(config.NICHE_TERMS[t] for t in hits) / config.NICHE_SATURATION)
 
     diversity = min(1.0, len(c.kinds) / 3)
