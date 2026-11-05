@@ -16,9 +16,9 @@ A local Python pipeline that collects public posts and articles from free source
   - Compare score parts for items you post against items you skip: `python -m radar weights` (needs at least 5 "post" and 5 "no" marks)
   - Tests: `python -m unittest discover -s tests -t .`
   - Lint: none configured yet.
-- Layout: `radar/config.py` holds every tunable value and source list; `radar/sources/` the collectors; `radar/rank.py` clustering, scoring and the floor; `radar/store.py` SQLite; `radar/digest.py` the output.
+- Layout: `radar/config.py` holds every tunable value and source list; `radar/sources/` the collectors; `radar/rank.py` clustering, scoring and the floor; `radar/categorize.py` digest categories (rules in config); `radar/store.py` SQLite; `radar/digest.py` the output.
 - All HTTP collectors send a fixed, honest user agent that names the tool. Do not imitate a browser.
-- Notion: the pipeline never writes to Notion and holds no Notion token. Claude pushes digests to Notion on request through the connector.
+- Notion: the pipeline never writes to Notion and holds no Notion token. Claude pushes digests to Notion on request through the connector, one page per day named YYYY-MM-DD under the parent page "Content Radar digests".
 
 ## Conventions
 

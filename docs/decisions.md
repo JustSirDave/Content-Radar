@@ -78,3 +78,21 @@ Date: 2026-11-04 | Status: approved
 Context: The owner marked 12 main-list items from titles alone: 10 "post", 2 "no" (CBN data localisation advice, the naira budget story). They said the picks were quick reactions to titles and that they skipped two for having no angle of their own. That is too few misses, and too much about the owner, to fit five weights.
 Decision: Leave the weights as they are. Add a `ratings` table (approved by the owner, SQL shown before it was added), a `rate` command that copies the topic's score parts from the latest digest, and a `weights` command that compares score parts for "post" against "no" once there are at least 5 of each.
 Alternatives: Retune now on 12 title-based marks (would encode a guess); tune by hand without data.
+
+## D-014 — Notion: one page per day, named by date, under one parent page
+Date: 2026-11-05 | Status: approved
+Context: The Notion destination was open. The owner chose to start with the simpler layout and review it after use.
+Decision: Each pushed digest is a Notion sub-page named with its date (YYYY-MM-DD) under a parent page "Content Radar digests". Claude pushes on request; the pipeline still never writes to Notion. A database with one row per topic stays an option once the page layout has been tried.
+Alternatives: A database row per topic (filters and statuses, but Notion and the local database would drift apart because nothing syncs back).
+
+## D-015 — Digest topics are grouped into categories by rule
+Date: 2026-11-05 | Status: approved
+Context: The owner wanted the digest categorised. Claude had grouped one digest by hand when pushing it to Notion.
+Decision: The pipeline assigns categories itself, from rules in `radar/config.py`. Main list: "Nigeria policy and economy", "Africa tech and business", "AI engineering and agents", "AI companies and models", chosen by the category with the most matched niche-term weight (ties go to the earlier category; no match shows as "Uncategorised"). Vendor and regulator section: grouped by source (Anthropic and Claude, OpenAI, Meta, Nigerian regulators; no match shows as "Other updates"). Each topic in the JSON digest carries its `category`. Tests check that every niche term has a category and every official source has a vendor group.
+Alternatives: Group by hand when pushing (inconsistent between days); group by source only (misses the topic split the owner wants).
+
+## D-016 — X and LinkedIn are an open workstream, not parked
+Date: 2026-11-05 | Status: approved
+Context: D-005 deferred X and LinkedIn data. The owner corrected that they are not parked. Today X is covered only by a Google News sample (text, no counts), and LinkedIn is not covered at all. Third-party data APIs were tested earlier and judged weak.
+Decision: Treat both as work still to plan. No approach is chosen yet.
+Alternatives: None decided.

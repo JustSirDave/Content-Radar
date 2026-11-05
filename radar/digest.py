@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from . import categorize
 from .rank import Cluster
 
 NOTE = (
@@ -12,9 +13,10 @@ NOTE = (
 )
 
 
-def _cluster_json(rank_no: int, c: Cluster) -> dict:
+def _cluster_json(rank_no: int, c: Cluster, category: str) -> dict:
     return {
         "rank": rank_no,
+        "category": category,
         "topic_id": getattr(c, "topic_id", None),
         "title": c.lead["title"],
         "score": c.score,
@@ -39,11 +41,11 @@ def _fmt(v: float | None) -> str:
     return "unknown" if v is None else f"{v:.2f}"
 
 
-def _topic_block(n: int, c: Cluster) -> list[str]:
+def _topic_block(n: int, c: Cluster, heading: str = "###") -> list[str]:
     tid = getattr(c, "topic_id", "?")
     times = getattr(c, "times_surfaced", "?")
     lines = [
-        f"### {n}. {c.lead['title']}",
+        f"{heading} {n}. {c.lead['title']}",
         f"Topic #{tid} | score {c.score} | confidence {c.confidence} | surfaced {times} day(s) "
         f"| passed floor: {c.floor_reason}",
         f"Flags: {', '.join(c.flags) or 'none'}  ",
@@ -69,15 +71,22 @@ def render_markdown(now: datetime, health: list[dict], shown: list[Cluster], off
                   f"{item_count} recent items were ranked. "
                   f"{below_count} topics were below the confidence floor, so none are shown.", ""]
     else:
-        lines += [f"## Top topics ({len(shown)})", ""]
-        for n, c in enumerate(shown, 1):
-            lines += _topic_block(n, c)
+        lines += [f"## Top topics ({len(shown)})", "",
+                  "Grouped by category. Numbers are the overall score rank.", ""]
+        rank_of = {id(c): n for n, c in enumerate(shown, 1)}
+        for label, members in categorize.group_by(shown, categorize.main_category, categorize.MAIN_ORDER):
+            lines += [f"### {label} ({len(members)})", ""]
+            for c in members:
+                lines += _topic_block(rank_of[id(c)], c, "####")
     if official:
         lines += [f"## Vendor and regulator updates ({len(official)})", "",
                   "Shown apart from the main list: these sources publish no engagement counts and "
                   "post rarely, so they would otherwise be crowded out. Window is up to 30 days.", ""]
-        for n, c in enumerate(official, 1):
-            lines += _topic_block(n, c)
+        rank_of = {id(c): n for n, c in enumerate(official, 1)}
+        for label, members in categorize.group_by(official, categorize.vendor_group, categorize.VENDOR_ORDER):
+            lines += [f"### {label} ({len(members)})", ""]
+            for c in members:
+                lines += _topic_block(rank_of[id(c)], c, "####")
     lines += [f"{below_count} further topics were below the confidence floor.", ""]
     lines += ["## Source health", "", "| Source | Status | Items | New | Detail |", "|---|---|---|---|---|"]
     for h in health:
@@ -98,7 +107,8 @@ def write(out_dir: Path, now: datetime, health: list[dict], shown: list[Cluster]
     json_path.write_text(json.dumps({
         "generated_at": now.isoformat(), "note": NOTE, "items_collected": item_count,
         "below_floor": below_count, "source_health": health,
-        "topics": [_cluster_json(n, c) for n, c in enumerate(shown, 1)],
-        "official_updates": [_cluster_json(n, c) for n, c in enumerate(official, 1)],
+        "topics": [_cluster_json(n, c, categorize.main_category(c)) for n, c in enumerate(shown, 1)],
+        "official_updates": [_cluster_json(n, c, categorize.vendor_group(c))
+                             for n, c in enumerate(official, 1)],
     }, indent=2), encoding="utf-8")
     return md_path, json_path

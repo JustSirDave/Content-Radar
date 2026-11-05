@@ -69,6 +69,39 @@ OFFICIAL_SECTION_LIMIT = 8  # vendor and regulator updates shown apart from the 
 OFFICIAL_PER_SOURCE = 2
 MAX_SOURCE_SHARE = 0.4  # no single source may fill more than this share of the digest
 
+# --- Digest categories ---------------------------------------------------------------
+# A main-list topic goes to the category whose terms carry the most NICHE_TERMS weight among the
+# topic's matched terms. Ties go to the earlier category. No match means "Uncategorised", shown
+# as such. Term sets are disjoint so a term counts for one category only.
+CATEGORIES: list[tuple[str, frozenset[str]]] = [
+    ("Nigeria policy and economy", frozenset({
+        "cbn", "ndpa", "ndpc", "nitda", "naira", "data localisation", "data localization"})),
+    ("Africa tech and business", frozenset({
+        "nigeria", "nigerian", "africa", "african", "fintech", "fintech nigeria", "lagos",
+        "africa startup", "kenya", "ghana", "entrepreneur", "entrepreneurship", "startup",
+        "founder", "funding", "raises", "business", "sme"})),
+    ("AI engineering and agents", frozenset({
+        "claude code", "mcp", "ai agent", "agent", "agentic", "rag", "llm evals", "n8n", "whisper",
+        "voice transcription", "llm", "python", "automation", "chatbot", "open source", "whatsapp",
+        "whatsapp business api", "whatsapp ai", "cloud api", "graph api", "model deprecation",
+        "openai api"})),
+    ("AI companies and models", frozenset({"claude", "openai", "anthropic", "codex", "gpt"})),
+]
+UNCATEGORISED = "Uncategorised"
+
+# Vendor and regulator section groups, by source name prefix. The first item of a topic whose
+# source matches decides the group; no match means "Other updates", shown as such.
+VENDOR_GROUPS: list[tuple[str, tuple[str, ...]]] = [
+    ("Anthropic and Claude", (
+        "rss:claude_code_releases", "rss:anthropic_sdk_python_releases", "rss:claude_status",
+        "anthropic_sitemap", "gnews:x_official_claudedevs", "gnews:x_official_claudeai",
+        "gnews:x_official_anthropic")),
+    ("OpenAI", ("rss:openai_news", "gnews:x_official_openaidevs")),
+    ("Meta", ("rss:meta_", "gnews:x_official_metafordevs")),
+    ("Nigerian regulators", ("rss:ndpc", "rss:nitda")),
+]
+OTHER_UPDATES = "Other updates"
+
 TOPIC_MATCH_JACCARD = 0.5
 TOPIC_MEMORY_DAYS = 14
 
