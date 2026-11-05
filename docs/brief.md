@@ -18,7 +18,7 @@ Claude is a second consumer of the output. The owner asks Claude, in chat, to re
 
 ## 3. Core flows
 
-1. **Collect.** On a schedule (every few hours), collectors pull recent items from public sources. A run missed while the computer was off catches up the gap on its next start.
+1. **Collect.** The owner runs the pipeline manually (decided 2026-11-04: no schedule). Collectors pull recent items from public sources. Each source reads from its own last success, so a gap of days is caught up on the next run (up to a week back, or 30 days with `--since-hours`).
 2. **Rank.** Items are normalized into one record, stored, clustered into topics, scored, and filtered by a confidence floor.
 3. **Digest.** The run writes a daily markdown digest, plus a JSON copy, listing ranked topics with evidence links and a score breakdown. If nothing clears the floor, the digest says so plainly.
 4. **Angle and Notion (in chat, not in the pipeline).** The owner asks Claude to read the digest. Claude names topics, explains why now, proposes angles, and asks for the owner's own experience. It cites only links collected in the run. When the owner asks, Claude adds the digest to the owner's Notion through the Notion connector. The pipeline itself never writes to Notion and holds no Notion token. Work-lane notes (the owner's two lines after client work) are given to Claude in chat, not stored in a file.
@@ -33,9 +33,12 @@ Claude is a second consumer of the output. The owner asks Claude, in chat, to re
 - GitHub (search)
 - DEV Community
 - RSS and Atom, verified working on 2026-11-04: TechCabal, Technext, Nairametrics, WeeTracker, Techpoint, OpenAI news, Meta developers blog. Techpoint refused a browser-style request header but accepted an honest tool name, so all collectors must identify themselves plainly (a fixed user agent naming the tool).
-- Anthropic: no news RSS feed exists (four guessed addresses returned 404). Verified on 2026-11-04 as working alternatives: GitHub releases Atom feeds for `anthropics/claude-code` and `anthropics/anthropic-sdk-python`, the `status.claude.com` RSS history feed, the raw `CHANGELOG.md` of claude-code, and `anthropic.com/sitemap.xml` (new news pages could be detected by comparing it between runs). The route is chosen in section 14.
-- Nigerian regulators, checked 2026-11-04: NDPC (`ndpc.gov.ng/feed/`) and NITDA (`nitda.gov.ng/feed/`) have working RSS feeds. CBN has no feed (`/feed` and `/rss` return 404). Its circulars page is plain HTML. The route is chosen in section 14.
-- X sample through Google News RSS, verified on 2026-11-04 (phase 2): a `site:x.com` query with a `when:2d` window returned 100 items whose titles are the post text, labelled "- X". It carries no like or repost counts, so X items can only add corroboration and recency, not engagement.
+- Anthropic: no news RSS feed exists. Used: GitHub releases Atom feeds (`claude-code`, `anthropic-sdk-python`), the `status.claude.com` feed, and the `anthropic.com` sitemap as a new-only source. The sitemap's `lastmod` is a site maintenance date (old posts carry recent dates), so it is ignored; the pipeline remembers every `/news/` page, treats the first read as a baseline that reports nothing, and reports only pages that appear afterwards. `claude.com/blog` is a script-rendered page with no feed and is not read. Note: urllib in Python 3.10 does not follow HTTP 308, so the HTTP layer handles it.
+- Meta: three feeds (developers blog, newsroom, engineering blog), all verified working.
+- Nigerian regulators, checked 2026-11-04: NDPC (`ndpc.gov.ng/feed/`) and NITDA (`nitda.gov.ng/feed/`) have working RSS feeds. CBN has no feed. Searching Google News for `site:cbn.gov.ng` returns library catalogue pages, so the CBN source searches by topic ("Central Bank of Nigeria circular OR directive OR guidelines"), which returns press coverage. These items are classed as news.
+- X through Google News RSS, enabled 2026-11-04 (pulled forward from phase 2): `site:x.com` queries return about 100 items each, whose titles are the post text, labelled "- X". There are no like or repost counts. Two kinds of query:
+  - Keyword samples ("claude code", "ai agents", "whatsapp" "ai"): community kind, so an X post alone never passes the floor; it can only add corroboration. All X queries count as one independent publisher ("x"), so they cannot corroborate each other.
+  - Official accounts (`site:x.com/ClaudeDevs`, `/claudeai`, `/AnthropicAI`, `/OpenAIDevs`, `/MetaforDevs`): vendor kind, so an on-topic post counts as an official update and appears in the vendor and regulator section. This is how the 3 Nov "October was a big month for Claude Code" post from `@ClaudeDevs` is found.
 - YouTube (official API), optional
 
 **Pipeline**
@@ -44,7 +47,8 @@ Claude is a second consumer of the output. The owner asks Claude, in chat, to re
 - Word-overlap clustering, scoring, a confidence floor, a diversity cap.
 - Topic memory: times surfaced, first and last seen, `covered` and `dismissed` states.
 - Per-source failure isolation and a source-health report in every digest.
-- Catch-up runs after downtime.
+- Per-source catch-up after gaps between manual runs.
+- A separate "Vendor and regulator updates" section in the digest (up to 8, at most 2 per source), because those sources publish no engagement counts and post rarely, so the main ranking would crowd them out. A topic goes in the main list only if a community or news source (other than the X sample) carries it; topics carried only by vendors, regulators or X posts (release notes, status posts, official-account posts) are updates, not stories, and appear only in this section.
 
 **Phase 2 additions**
 - X sample through Google News `site:x.com` RSS (no key, no like counts).
@@ -63,7 +67,7 @@ Claude is a second consumer of the output. The owner asks Claude, in chat, to re
 
 Measured over the first two weeks of real use:
 
-1. **Runs on schedule:** at least 90% of scheduled runs complete, and every missed run is caught up on the next start.
+1. **Runs reliably:** a manual run completes in a few minutes, and a run after a gap catches up each source from its own last success.
 2. **Fails safely:** killing any one source leaves the other sources' results intact, and the digest names the failed source.
 3. **Honest empty state:** on a quiet day the digest says "nothing worth posting today" rather than showing weak items.
 4. **Useful:** in a scorecard of digest items, the owner marks at least 3 items a day as "would post", on at least 5 of 7 days. This is the test of the volume goal.
@@ -85,9 +89,9 @@ Measured over the first two weeks of real use:
 ## 8. Channel and bandwidth target
 
 - **Device:** the owner's Windows 11 computer. No mobile, no web UI, no WhatsApp.
-- **Interface:** a command-line program, run by Windows Task Scheduler, writing files. Claude reads those files in chat.
-- **Connectivity:** normal home or office internet. Collectors must tolerate timeouts and short outages: bounded retries, per-source timeouts, and a catch-up run.
-- **Machine on-time:** the computer is not always on, so scheduled runs can be missed.
+- **Interface:** a command-line program, run manually by the owner, writing files. Claude reads those files in chat.
+- **Connectivity:** normal home or office internet. Collectors must tolerate timeouts and short outages: bounded retries and per-source timeouts.
+- **Run pattern:** manual runs, so gaps between runs are normal and handled by per-source catch-up.
 
 ## 9. Money and payments
 
@@ -104,18 +108,21 @@ None. The product handles no money. The standing Nigerian defaults (NGN, Paystac
 
 ## 11. Stack
 
-Python with pip and venv, SQLite, Windows Task Scheduler. No model API is used.
+Python with pip and venv, SQLite. No model API is used.
 
-**Schedule:** every 4 hours, with the Task Scheduler option to run as soon as possible after a missed start. The program also records its last successful run and fetches the gap since then.
+**Runs:** manual only. The owner decided on 2026-11-04 not to schedule it. Each source records its last successful read and the next run fetches the gap since then.
 
 **Starting tuning values (to be tuned on real digests):**
 - Recency half-life: 24 hours for Hacker News and Reddit, 48 hours for news sites, 72 hours for GitHub.
-- Confidence floor: a topic needs at least 25 total engagement and 2 independent sources, or at least 200 engagement from a single source.
+- Confidence floor: every path first requires at least one niche term. Then a topic needs at least 25 total engagement and 2 independent sources, or at least 100 engagement from a single source (lowered from 200 on 2026-11-04), or to be a quiet-important item from an official source, or (added 2026-11-04) to come from a news, vendor or regulator source, which publish no engagement counts and so could never clear an engagement bar. Their editorial choice to publish counts as the signal.
+- Ranking windows by kind: community 96 hours, news 7 days, vendor and regulator 30 days. Recency still decays the score.
+- Africa, business and entrepreneurship terms added 2026-11-04 (africa, african, nigerian, fintech, entrepreneur, entrepreneurship, founder, funding, raises, business, kenya, ghana, naira, sme), plus whatsapp (weight 3), cloud api and graph api.
 
 **Starting niche keywords (weight 3 is strongest):**
 - 3: claude code, mcp, ai agent, whatsapp business api, whatsapp ai, rag, llm evals, model deprecation, cbn, ndpa, ndpc, nitda
-- 2: llm, openai api, anthropic, n8n, whisper, voice transcription, fintech nigeria, lagos, nigeria, africa startup, data localisation
-- 1: automation, chatbot, python, open source, startup
+- 2: openai, codex, gpt, agentic (added 2026-11-04), llm, openai api, anthropic, n8n, whisper, voice transcription, fintech nigeria, lagos, nigeria, africa startup, data localisation
+- 1: agent (added 2026-11-04), automation, chatbot, python, open source, startup
+- Terms match whole words only, plurals allowed (plain substring matching had let "rag" fire inside "storage").
 
 **Starting lists (unverified, adjust after real digests):**
 - Stack Overflow tags: openai-api, langchain, whatsapp-cloud-api, large-language-model
@@ -146,16 +153,25 @@ The pipeline itself has no model. Clustering, scoring and the floor are rule-bas
 - Work-lane notes: told to Claude in chat, no file.
 - Posting volume: raised only at a weekly review of the scorecard, not by an automatic rule.
 - Reddit: keep the collector and expect failures, reported in source health.
-- Starting keyword list, tags, searches, subreddits, half-lives, floor values and the Task Scheduler plan: accepted as drafted in section 11.
+- Starting keyword list, tags, searches, subreddits, half-lives and floor values: accepted as drafted in section 11, then tuned on 2026-11-04.
+- Scheduling: dropped. The owner runs the pipeline manually.
 - Permanent location: `Desktop\content-radar`.
 - Anthropic route: GitHub releases Atom feeds (claude-code and anthropic-sdk-python), the status.claude.com feed, and new news pages detected from the sitemap.
-- CBN route: Google News RSS filtered to `cbn.gov.ng` (headlines only, no page scraping).
+- CBN route: Google News RSS searching by topic (headlines only, no page scraping). The first plan, filtering to `cbn.gov.ng`, returned catalogue pages and was replaced.
 - NDPC and NITDA: their own RSS feeds.
 - Git: repository initialised with `dev` as the default branch.
 
 **Still open**
-1. **X through Google News RSS (phase 2).** Verified to return posts (section 4). Remaining risk: it is a sample, titles are truncated, and Google may change or throttle the feed.
+1. **X through Google News RSS.** Now enabled and returning fresh posts (section 4). Remaining risk: it is a sample, titles are truncated, post authors are not shown, and Google may change or throttle the feed.
 2. **Reddit.** Blocked from the owner's machine. Open whether any legitimate route exists later.
 3. **Notion destination.** Not chosen. Decide when the first real digest is pushed (a page per day, or a database with one row per topic, are the two candidates).
-4. **First work branch.** The name for the first piece of build work is not chosen.
-5. **Tuning.** All starting values in section 11 are placeholders until real digests exist.
+4. **Tuning.** All starting values in section 11 are placeholders until real digests exist. The score weights were not changed on 2026-11-04: a first round of 12 title-based picks (10 post, 2 no) gave too little signal, and the owner said the picks were quick reactions to titles. A `ratings` table plus `rate` and `weights` commands now collect post, maybe and no marks with the score parts at rating time, so the weights can be tuned on evidence after several digests.
+
+**Phase 1 built (branch `feat/phase-1-pipeline`), first live run 2026-11-04: 17 of 23 sources ok.**
+Findings from that run, to act on when tuning:
+- **Off-niche items passed the floor on engagement alone** (AMD vs Intel, a hardware Kickstarter). Fixed: every floor path now requires at least one niche term. Effect on the same data: 6 topics shown became 1, which exposed a narrow keyword list. Then added the terms "openai", "codex", "gpt", "agentic" and "agent", and lowered the single-source engagement bar from 200 to 100. Result on the same data: 8 on-topic topics, including the OpenAI acquisition and the Garry Tan agent-spend story. Also fixed substring matching to whole-word matching.
+- **Techpoint blocked the pipeline's plain user agent (HTTP 403)** although it answered an earlier test. It is reported as failed and not worked around.
+- **Stack Overflow, NDPC, NITDA and the Claude status feed returned nothing in the 48-hour window.** These are quiet sources, not errors.
+- **Anthropic sitemap `lastmod` looks like bulk updates** (many old pages share mid-October dates), so the collector fails loudly if more than 15 news pages change in one window instead of flooding the digest.
+- Reddit failed with HTTP 403 on all five subreddits, as expected.
+- Clustering at the current thresholds merged the same story across Hacker News and OpenAI's feed, but cross-outlet merging depends on shared title words and needs checking on more data.

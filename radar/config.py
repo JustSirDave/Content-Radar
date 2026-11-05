@@ -1,0 +1,123 @@
+"""Starting values from docs/brief.md section 11. All are placeholders to tune on real digests."""
+
+from __future__ import annotations
+
+USER_AGENT = "ContentRadar/0.1 (personal research tool; read-only)"
+HTTP_TIMEOUT_SECONDS = 20
+HTTP_RETRIES = 2
+
+DEFAULT_LOOKBACK_HOURS = 48  # used when a source has never succeeded
+MAX_LOOKBACK_HOURS = 24 * 7  # catch-up never reaches further back than a week
+OVERLAP_HOURS = 1  # re-read a little before the last success so nothing slips through
+# Items older than this (by kind) are not ranked. Vendors and regulators post rarely and
+# monthly recaps matter, so they stay in view for 30 days; recency still decays their score.
+RANK_WINDOW_HOURS_BY_KIND = {"community": 96, "news": 168, "vendor": 720, "regulator": 720}
+# Used by the first read of a source that has never succeeded.
+DEFAULT_LOOKBACK_HOURS_BY_KIND = {"community": 48, "news": 168, "vendor": 720, "regulator": 720}
+
+# Niche keywords: weight 3 is strongest.
+NICHE_TERMS: dict[str, int] = {
+    "claude code": 3, "mcp": 3, "ai agent": 3, "whatsapp business api": 3,
+    "whatsapp ai": 3, "rag": 3, "llm evals": 3, "model deprecation": 3,
+    "cbn": 3, "ndpa": 3, "ndpc": 3, "nitda": 3,
+    "claude": 2, "openai": 2, "codex": 2, "gpt": 2, "agentic": 2, "agent": 1,
+    "llm": 2, "openai api": 2, "anthropic": 2, "n8n": 2, "whisper": 2,
+    "voice transcription": 2, "fintech nigeria": 2, "lagos": 2, "nigeria": 2,
+    "africa startup": 2, "data localisation": 2, "data localization": 2,
+    "automation": 1, "chatbot": 1, "python": 1, "open source": 1, "startup": 1,
+    # Added 2026-11-04: Africa, business and entrepreneurship coverage.
+    "whatsapp": 3, "cloud api": 2, "graph api": 1,
+    "africa": 2, "african": 2, "nigerian": 2, "fintech": 2, "entrepreneurship": 2,
+    "entrepreneur": 2, "kenya": 1, "ghana": 1, "naira": 1, "sme": 1, "founder": 1,
+    "funding": 1, "raises": 1, "business": 1,
+}
+NICHE_SATURATION = 6  # matched weight at which relevance reaches 1.0
+
+# Items that matter without spiking: deadlines, regulation, retirements, billing.
+QUIET_IMPORTANT_TERMS = (
+    "deprecat", "retire", "sunset", "shut down", "shutdown", "deadline", "effective",
+    "circular", "directive", "guideline", "regulation", "compliance", "billing",
+    "pricing change", "will be removed", "end of life",
+)
+OFFICIAL_KINDS = {"vendor", "regulator", "news"}
+
+# Half-life in hours, by source prefix.
+HALF_LIFE_HOURS: dict[str, float] = {
+    "hackernews": 24, "reddit": 24, "devto": 48, "stackoverflow": 48,
+    "rss": 48, "gnews": 48, "anthropic_sitemap": 48, "github": 72,
+}
+
+# Score weights (sum to 1.0). Missing components are dropped and the rest renormalised.
+WEIGHTS = {
+    "recency": 0.25, "engagement": 0.25, "corroboration": 0.25,
+    "relevance": 0.15, "diversity": 0.10,
+}
+VELOCITY_MAX_BONUS = 8.0
+VELOCITY_SATURATION_PER_HOUR = 10.0
+QUIET_IMPORTANT_BONUS = 10.0
+
+CLUSTER_JACCARD = 0.35
+CLUSTER_MIN_SHARED_TOKENS = 3
+
+# Confidence floor.
+FLOOR_MIN_ENGAGEMENT = 25.0
+FLOOR_MIN_SOURCES = 2
+FLOOR_SINGLE_SOURCE_ENGAGEMENT = 100.0  # lowered from 200 on 2026-11-04; the niche-term rule now guards noise
+
+TOP_N = 12
+OFFICIAL_SECTION_LIMIT = 8  # vendor and regulator updates shown apart from the main list
+OFFICIAL_PER_SOURCE = 2
+MAX_SOURCE_SHARE = 0.4  # no single source may fill more than this share of the digest
+
+TOPIC_MATCH_JACCARD = 0.5
+TOPIC_MEMORY_DAYS = 14
+
+# --- Sources -------------------------------------------------------------------------
+
+# (name, url, kind, title_prefix)
+FEEDS: list[tuple[str, str, str, str]] = [
+    ("techcabal", "https://techcabal.com/feed/", "news", ""),
+    ("techpoint", "https://techpoint.africa/feed/", "news", ""),
+    ("technext", "https://technext24.com/feed/", "news", ""),
+    ("nairametrics", "https://nairametrics.com/feed/", "news", ""),
+    ("weetracker", "https://weetracker.com/feed/", "news", ""),
+    ("openai_news", "https://openai.com/news/rss.xml", "vendor", ""),
+    ("meta_dev_blog", "https://developers.facebook.com/blog/feed/", "vendor", "Meta developers: "),
+    ("meta_newsroom", "https://about.fb.com/news/feed/", "vendor", "Meta: "),
+    ("meta_engineering", "https://engineering.fb.com/feed/", "vendor", "Meta engineering: "),
+    ("ndpc", "https://ndpc.gov.ng/feed/", "regulator", ""),
+    ("nitda", "https://nitda.gov.ng/feed/", "regulator", ""),
+    ("claude_code_releases", "https://github.com/anthropics/claude-code/releases.atom", "vendor", "Claude Code release: "),
+    ("anthropic_sdk_python_releases", "https://github.com/anthropics/anthropic-sdk-python/releases.atom", "vendor", "Anthropic Python SDK release: "),
+    ("claude_status", "https://status.claude.com/history.rss", "vendor", "Claude status: "),
+]
+
+ANTHROPIC_SITEMAP_URL = "https://www.anthropic.com/sitemap.xml"
+
+STACKOVERFLOW_TAGS = ["openai-api", "langchain", "whatsapp-cloud-api", "large-language-model"]
+GITHUB_TOPICS = ["mcp-server", "ai-agents", "whatsapp-bot"]
+DEVTO_TAGS = ["ai", "llm", "mcp", "whatsapp", "nigeria"]
+SUBREDDITS = ["ClaudeAI", "LocalLLaMA", "LLMDevs", "OpenAI", "n8n"]
+HACKERNEWS_QUERIES = [
+    "claude code", "mcp", "ai agent", "whatsapp", "rag", "llm evals", "anthropic",
+    "openai", "nigeria", "africa", "n8n", "model deprecation",
+]
+
+# Google News RSS queries: (name, query, kind, enabled).
+# Every name starting "x_" is a sample of X posts: text only, no like counts, so all of
+# them count as ONE independent publisher ("x") when corroborating a topic.
+GOOGLE_NEWS_QUERIES: list[tuple[str, str, str, bool]] = [
+    # Searching site:cbn.gov.ng returns library catalogue pages. Searching by topic returns
+    # real press coverage of CBN circulars and policy, so these are news, not official posts.
+    ("cbn", "Central Bank of Nigeria circular OR directive OR guidelines", "news", True),
+    # Keyword samples of X (community kind: they cannot pass the floor alone).
+    ("x_claude_code", 'site:x.com "claude code"', "community", True),
+    ("x_ai_agents", 'site:x.com "ai agents"', "community", True),
+    ("x_whatsapp_ai", 'site:x.com "whatsapp" "ai"', "community", True),
+    # Official accounts (vendor kind: an on-topic post counts as an official update).
+    ("x_official_claudedevs", "site:x.com/ClaudeDevs", "vendor", True),
+    ("x_official_claudeai", "site:x.com/claudeai", "vendor", True),
+    ("x_official_anthropic", "site:x.com/AnthropicAI", "vendor", True),
+    ("x_official_openaidevs", "site:x.com/OpenAIDevs", "vendor", True),
+    ("x_official_metafordevs", "site:x.com/MetaforDevs", "vendor", True),
+]
